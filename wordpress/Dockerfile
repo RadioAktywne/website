@@ -1,4 +1,5 @@
-FROM php:7.4-apache
+ARG PHP_BASE=php:8.2-apache-bookworm
+FROM ${PHP_BASE}
 
 ARG WORDPRESS_VERSION=6.3.2
 ARG WORDPRESS_SHA=858a79f5916909715e79df4b87fc4f30172e8254
@@ -54,7 +55,7 @@ RUN savedAptMark=$(apt-mark showmanual); \
 		zip \
 	; \
 # https://pecl.php.net/package/imagick
-	pecl install imagick-3.6.0; \
+	pecl install imagick-3.8.1; \
 	docker-php-ext-enable imagick; \
 	rm -r /tmp/pear; \
 	\
@@ -70,9 +71,9 @@ RUN savedAptMark=$(apt-mark showmanual); \
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
 	ldd "$extDir"/*.so \
-		| awk '/=>/ { print $3 }' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
 		| sort -u \
-		| xargs -r dpkg-query -S \
+		| xargs -r dpkg-query --search \
 		| cut -d: -f1 \
 		| sort -u \
 		| xargs -rt apt-mark manual; \
@@ -93,7 +94,7 @@ RUN docker-php-ext-enable opcache; \
 		echo 'opcache.interned_strings_buffer=8'; \
 		echo 'opcache.max_accelerated_files=4000'; \
 		echo 'opcache.revalidate_freq=2'; \
-		echo 'opcache.fast_shutdown=1'; \
+# opcache.fast_shutdown no longer exists in PHP 8.x (https://github.com/docker-library/php/pull/1587)
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 # https://wordpress.org/support/article/editing-wp-config-php/#configure-error-logging
 RUN { \

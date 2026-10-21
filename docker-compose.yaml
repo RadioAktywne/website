@@ -40,7 +40,10 @@ services:
     depends_on:
       - wordpress
   wordpress:
-    build: wordpress
+    build:
+      context: wordpress
+      args:
+        PHP_BASE: "${WORDPRESS_PHP_BASE:-php:8.2-apache-bookworm}"
     restart: unless-stopped
     ports:
       - "${WORDPRESS_PUBLISHED_PORT:-20002}:80"
