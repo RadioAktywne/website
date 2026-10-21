@@ -152,7 +152,10 @@ COPY ./scripts/download.sh ./scripts/download.sh
 RUN chmod +x ./scripts/download.sh
 
 # preload plugins
-RUN ./scripts/download.sh plugin disable-comments; \
+# disable-comments must stay pinned: 2.7.0+ calls WP_REST_Request::is_method(), which only
+# exists from WordPress 6.8 on - on our 6.3.2 it fatals on every REST request (HTTP 500).
+# 2.6.0 is the newest release that works with WordPress 6.3.x.
+RUN ./scripts/download.sh plugin disable-comments 2.6.0; \
     ./scripts/download.sh plugin advanced-custom-fields; \
     ./scripts/download.sh plugin squidge
 
